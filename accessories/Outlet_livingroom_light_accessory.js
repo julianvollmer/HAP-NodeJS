@@ -3,46 +3,26 @@ var Service = require('../').Service;
 var Characteristic = require('../').Characteristic;
 var uuid = require('../').uuid;
 var requ = require('request');
-var base_url = 'http://127.0.0.1:3000';
-var bulbId = 'F2';
 
 // here's a fake hardware device that we'll expose to HomeKit
-var FAKE_LIGHT = {
+var OUTLET = {
   powerOn: false,
-  brightness: 100, // percentage
     
   setPowerOn: function(on) { 
-    var url = base_url + '/signal/' + bulbId + "/" ;
-    var signal = on ? "1" : "2";
-    console.log("Turning the light %s!", signal);
-    FAKE_LIGHT.powerOn = on;
-    url += signal;
-    console.log(url);
-    requ(url, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        console.log(body); // Show the HTML for the Modulus homepage.
-      }
-    });
-  },
-  setBrightness: function(brightness) {
-    console.log("Setting light brightness to %s", brightness);
-    var url = base_url + '/brightness/' + brightness;
-    requ(url, function (error, response, body) {
+    var status = "0";
+    var url = 'http://127.0.0.1:3000/outlet/2/'
+    console.log("Turning the light %s!", on ? "on" : "off");
+    if(on){
+      status  = "1";
+    }
+    OUTLET.powerOn = on;
+    url += status;
+  requ(url, function (error, response, body) {
       if (!error && response.statusCode == 200) {
           console.log(body); // Show the HTML for the Modulus homepage.
       }
-    });
-    FAKE_LIGHT.brightness = brightness;
-  },
-  setHue: function(hue) {
-    console.log("Setting light Brightness Hue to %s", hue);
-    var url = base_url + '/color/' + bulbId + '/' + hue;
-    requ(url, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-          console.log(body); // Show the HTML for the Modulus homepage.
-      }
-    });
-    FAKE_LIGHT.hue = hue;
+  });
+  console.log(url);
   },
   identify: function() {
     console.log("Identify the light!");
@@ -52,42 +32,42 @@ var FAKE_LIGHT = {
 // Generate a consistent UUID for our light Accessory that will remain the same even when
 // restarting our server. We use the `uuid.generate` helper function to create a deterministic
 // UUID based on an arbitrary "namespace" and the word "light".
-var lightUUID = uuid.generate('hap-nodejs:accessories:light');
+var outletUUID = uuid.generate('hap-nodejs:accessories:Outlet');
 
 // This is the Accessory that we'll return to HAP-NodeJS that represents our fake light.
-var light = exports.accessory = new Accessory('Testlight', lightUUID);
+var outlet = exports.accessory = new Accessory('OutletLivingrommLight', outletUUID);
 
 // Add properties for publishing (in case we're using Core.js and not BridgedCore.js)
-light.username = "1A:2B:3C:4D:5E:00";
-light.pincode = "031-45-154";
+outlet.username = "1A:2B:3C:4D:5E:DB";
+outlet.pincode = "031-45-154";
 
 // set some basic properties (these values are arbitrary and setting them is optional)
-light
+outlet
   .getService(Service.AccessoryInformation)
   .setCharacteristic(Characteristic.Manufacturer, "Oltica")
   .setCharacteristic(Characteristic.Model, "Rev-1")
   .setCharacteristic(Characteristic.SerialNumber, "A1S2NASF88EW");
 
 // listen for the "identify" event for this Accessory
-light.on('identify', function(paired, callback) {
-  FAKE_LIGHT.identify();
+outlet.on('identify', function(paired, callback) {
+  OUTLET.identify();
   callback(); // success
 });
 
 // Add the actual Lightbulb Service and listen for change events from iOS.
 // We can see the complete list of Services and Characteristics in `lib/gen/HomeKitTypes.js`
-light
-  .addService(Service.Lightbulb, "Testlicht") // services exposed to the user should have "names" like "Fake Light" for us
+outlet
+  .addService(Service.Outlet, "Steckdose Licht") // services exposed to the user should have "names" like "Fake Light" for us
   .getCharacteristic(Characteristic.On)
   .on('set', function(value, callback) {
-    FAKE_LIGHT.setPowerOn(value);
+    OUTLET.setPowerOn(value);
     callback(); // Our fake Light is synchronous - this value has been successfully set
   });
 
 // We want to intercept requests for our current power state so we can query the hardware itself instead of
 // allowing HAP-NodeJS to return the cached Characteristic.value.
-light
-  .getService(Service.Lightbulb)
+outlet
+  .getService(Service.Outlet)
   .getCharacteristic(Characteristic.On)
   .on('get', function(callback) {
     
@@ -97,7 +77,7 @@ light
     
     var err = null; // in case there were any problems
     
-    if (FAKE_LIGHT.powerOn) {
+    if (OUTLET.powerOn) {
       console.log("Are we on? Yes. " + err);
       callback(err, true);
     }
@@ -108,25 +88,14 @@ light
   });
 
 // also add an "optional" Characteristic for Brightness
-light
+/*outlet
   .getService(Service.Lightbulb)
   .addCharacteristic(Characteristic.Brightness)
   .on('get', function(callback) {
-    callback(null, FAKE_LIGHT.brightness);
+    callback(null, OUTLET.brightness);
   })
   .on('set', function(value, callback) {
-    FAKE_LIGHT.setBrightness(value);
+    OUTLET.setBrightness(value);
     callback();
-  });
-
-// also add an "optional" Characteristic for Hue
-light
-  .getService(Service.Lightbulb)
-  .addCharacteristic(Characteristic.Hue)
-  .on('get', function(callback) {
-    callback(null, FAKE_LIGHT.hue);
   })
-  .on('set', function(value, callback) {
-    FAKE_LIGHT.setHue(value);
-    callback();
-  });
+*/
