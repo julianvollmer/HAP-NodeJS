@@ -26,7 +26,7 @@ var FAKE_LIGHT = {
   },
   setBrightness: function(brightness) {
     console.log("Setting light brightness to %s", brightness);
-    var url = base_url + '/brightness/' + brightness;
+    var url = base_url + '/brightness/' + bulbId + "/" + brightness;
     requ(url, function (error, response, body) {
       if (!error && response.statusCode == 200) {
           console.log(body); // Show the HTML for the Modulus homepage.
